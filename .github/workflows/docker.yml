@@ -1,0 +1,38 @@
+name: Docker CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Crear .env desde .env.example
+        run: cp .env.example .env
+
+      - name: Construir imágenes
+        run: docker compose build
+
+      - name: Levantar servicios
+        run: docker compose up -d
+
+      - name: Prueba de comunicación (guardar y leer)
+        run: |
+          for i in $(seq 1 20); do
+            curl -sf http://localhost:5000/health && break || sleep 3
+          done
+          curl -sf -X POST http://localhost:5000/notas \
+            -H "Content-Type: application/json" \
+            -d '{"texto":"hola desde CI"}'
+          curl -sf http://localhost:5000/notas | grep "hola desde CI"
+
+      - name: Logs si falla
+        if: failure()
+        run: docker compose logs
+
+      - name: Apagar
+        if: always()
+        run: docker compose down -v
