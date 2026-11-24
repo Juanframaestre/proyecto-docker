@@ -1,0 +1,16 @@
+# Jenkins en un contenedor, con volumen para no perder la configuración.
+services:
+  jenkins:
+    build: .
+    container_name: jenkins
+    user: root                          # necesario para usar el socket de Docker del host
+    ports:
+      - "8080:8080"                     # interfaz web
+      - "50000:50000"                   # agentes remotos (inbound)
+    volumes:
+      - jenkins_home:/var/jenkins_home  # configuración, jobs, credenciales y plugins
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:
